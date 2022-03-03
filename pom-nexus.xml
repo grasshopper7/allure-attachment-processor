@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>tech.grasshopper</groupId>
 	<artifactId>allure-attachment-processor</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 
 	<name>allure-attachment-processor</name>
 	<url>https://ghchirp.tech/</url>
