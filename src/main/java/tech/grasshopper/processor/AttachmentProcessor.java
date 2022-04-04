@@ -84,16 +84,6 @@ public class AttachmentProcessor {
 		} catch (IOException e) {
 			logger.info(e.getMessage() + " Skipping body for - " + path.toString());
 		}
-		/*
-		 * try { processHeaders(); } catch (IOException e) { logger.info(e.getMessage()
-		 * + " Skipping headers for - " + path.toString()); } try { processCookies(); }
-		 * catch (IOException e) { logger.info(e.getMessage() +
-		 * " Skipping cookies for - " + path.toString()); } try { processParameters(); }
-		 * catch (IOException e) { logger.info(e.getMessage() +
-		 * " Skipping parameters for - " + path.toString()); } try {
-		 * processMultiParts(); } catch (IOException e) { logger.info(e.getMessage() +
-		 * " Skipping multi parts for - " + path.toString()); }
-		 */
 		try {
 			processHeadersAndCookies();
 		} catch (IOException e) {
@@ -145,33 +135,6 @@ public class AttachmentProcessor {
 				.processHeadersAndCookiesContent(headersAndCookies);
 		httpData.setHeadersAndCookiesContentFile(fileNamePrefix);
 	}
-
-	/*
-	 * private void processHeaders() throws IOException { Map<String, String>
-	 * headers = data.getHeaders(); if (!headers.isEmpty()) {
-	 * AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).
-	 * reportDirectory(reportDirectory).build() .processHeadersContent(headers);
-	 * httpData.setHeadersContentFile(fileNamePrefix); } }
-	 * 
-	 * private void processCookies() throws IOException { Map<String, String>
-	 * cookies = data.getCookies(); if (!cookies.isEmpty()) {
-	 * AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).
-	 * reportDirectory(reportDirectory).build() .processCookiesContent(cookies);
-	 * httpData.setCookiesContentFile(fileNamePrefix); } }
-	 * 
-	 * private void processParameters() throws IOException { Map<String, Map<String,
-	 * String>> parameters = data.getAllParameters(); if (!parameters.isEmpty()) {
-	 * AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).
-	 * reportDirectory(reportDirectory).build()
-	 * .processParametersContent(parameters);
-	 * httpData.setParametersContentFile(fileNamePrefix); } }
-	 * 
-	 * private void processMultiParts() throws IOException { List<Map<String,
-	 * String>> parts = data.getMultiParts(); if (!parts.isEmpty()) {
-	 * AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).
-	 * reportDirectory(reportDirectory).build() .processMultiPartsContent(parts);
-	 * httpData.setMultiPartsContentFile(fileNamePrefix); } }
-	 */
 
 	private void processAllParameters() throws IOException {
 		Map<String, Map<String, String>> parameters = data.getAllParameters();

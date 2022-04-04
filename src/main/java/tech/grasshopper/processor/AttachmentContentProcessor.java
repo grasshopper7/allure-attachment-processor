@@ -27,16 +27,6 @@ public class AttachmentContentProcessor {
 		createDisplayFiles(sbr, Attachment.BODY);
 	}
 
-	/*
-	 * public void processHeadersContent(Map<String, String> data) throws
-	 * IOException { StringBuffer sbr = processHeadersCookiesParametersContent(data,
-	 * Attachment.HEADERS); createDisplayFiles(sbr, Attachment.HEADERS); }
-	 * 
-	 * public void processCookiesContent(Map<String, String> data) throws
-	 * IOException { StringBuffer sbr = processHeadersCookiesParametersContent(data,
-	 * Attachment.COOKIES); createDisplayFiles(sbr, Attachment.COOKIES); }
-	 */
-
 	public void processHeadersAndCookiesContent(Map<String, Map<String, String>> data) throws IOException {
 		StringBuffer sbr = new StringBuffer();
 
@@ -45,14 +35,6 @@ public class AttachmentContentProcessor {
 		});
 		createDisplayFiles(sbr, Attachment.HEADERSANDCOOKIES);
 	}
-
-	/*
-	 * public void processParametersContent(Map<String, Map<String, String>> data)
-	 * throws IOException { StringBuffer sbr = new StringBuffer();
-	 * 
-	 * data.forEach((k, v) -> { sbr.append(processHeadersCookiesParametersContent(v,
-	 * k)); }); createDisplayFiles(sbr, Attachment.PARAMETERS); }
-	 */
 
 	public void processAllParametersContent(Map<String, Map<String, String>> parameters,
 			List<Map<String, String>> parts) throws IOException {
@@ -70,13 +52,6 @@ public class AttachmentContentProcessor {
 
 		createDisplayFiles(sbr, Attachment.ALLPARAMETERS);
 	}
-
-	/*
-	 * public void processMultiPartsContent(List<Map<String, String>> data) throws
-	 * IOException {
-	 * 
-	 * createDisplayFiles(processMultiParts(data), Attachment.MULTIPARTS); }
-	 */
 
 	private StringBuffer processMultiParts(List<Map<String, String>> data) {
 		StringBuffer sbr = new StringBuffer();
