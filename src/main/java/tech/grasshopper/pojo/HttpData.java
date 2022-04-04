@@ -5,6 +5,7 @@ import java.util.Map;
 import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
+import static tech.grasshopper.display.HtmlSnippets.*;
 
 @Getter
 @SuperBuilder
@@ -69,20 +70,12 @@ public abstract class HttpData {
 
 		if (containsHttpContentFiles()) {
 			if (!bodyContentFile.isEmpty())
-				sbr.append(createFileLink(bodyContentFile, "Body"));
+				sbr.append(dataFileLink(bodyContentFile, "Body"));
 			if (!headersAndCookiesContentFile.isEmpty())
-				sbr.append(createFileLink(headersAndCookiesContentFile, "Headers & Cookies"));
+				sbr.append(dataFileLink(headersAndCookiesContentFile, "Headers & Cookies"));
 			if (!allParametersContentFile.isEmpty())
-				sbr.append(createFileLink(allParametersContentFile, "Parameters"));
+				sbr.append(dataFileLink(allParametersContentFile, "Parameters"));
 		}
 		return sbr.toString();
-	}
-
-	private String createFileLink(String link, String linkText) {
-		StringBuffer sbr = new StringBuffer();
-		return sbr.append("<span data=\"").append(link).append("\" type=\"").append(linkText)
-				.append("\"><a href='#' onClick=\"window.open('").append(link)
-				.append("','','width=700,height=500'); return false;\">").append(linkText)
-				.append("</a></span> &nbsp;&nbsp;&nbsp;").toString();
 	}
 }
