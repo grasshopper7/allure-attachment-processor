@@ -13,22 +13,50 @@ public abstract class HttpData {
 	@Default
 	private String bodyContentFile = "";
 
-	@Default
-	private String headersContentFile = "";
+	/*
+	 * @Default private String headersContentFile = "";
+	 * 
+	 * @Default private String cookiesContentFile = "";
+	 * 
+	 * @Default private String parametersContentFile = "";
+	 * 
+	 * @Default private String multiPartsContentFile = "";
+	 */
 
 	@Default
-	private String cookiesContentFile = "";
+	private String headersAndCookiesContentFile = "";
+
+	@Default
+	private String allParametersContentFile = "";
 
 	public void setBodyContentFile(String fileNamePrefix) {
 		this.bodyContentFile = contentFileName(fileNamePrefix, Attachment.BODY);
 	}
 
-	public void setHeadersContentFile(String fileNamePrefix) {
-		this.headersContentFile = contentFileName(fileNamePrefix, Attachment.HEADERS);
+	/*
+	 * public void setHeadersContentFile(String fileNamePrefix) {
+	 * this.headersContentFile = contentFileName(fileNamePrefix,
+	 * Attachment.HEADERS); }
+	 * 
+	 * public void setCookiesContentFile(String fileNamePrefix) {
+	 * this.cookiesContentFile = contentFileName(fileNamePrefix,
+	 * Attachment.COOKIES); }
+	 * 
+	 * public void setParametersContentFile(String fileNamePrefix) {
+	 * this.parametersContentFile = contentFileName(fileNamePrefix,
+	 * Attachment.PARAMETERS); }
+	 * 
+	 * public void setMultiPartsContentFile(String fileNamePrefix) {
+	 * this.multiPartsContentFile = contentFileName(fileNamePrefix,
+	 * Attachment.MULTIPARTS); }
+	 */
+
+	public void setHeadersAndCookiesContentFile(String fileNamePrefix) {
+		this.headersAndCookiesContentFile = contentFileName(fileNamePrefix, Attachment.HEADERSANDCOOKIES);
 	}
 
-	public void setCookiesContentFile(String fileNamePrefix) {
-		this.cookiesContentFile = contentFileName(fileNamePrefix, Attachment.COOKIES);
+	public void setAllParametersContentFile(String fileNamePrefix) {
+		this.allParametersContentFile = contentFileName(fileNamePrefix, Attachment.ALLPARAMETERS);
 	}
 
 	private String contentFileName(String fileNamePrefix, String type) {
@@ -38,15 +66,14 @@ public abstract class HttpData {
 				.toString();
 	}
 
-	public static HttpData createHttpData(String title) {
-		String[] details = title.split(" ");
+	public static HttpData createHttpData(AttachmentData data) {
+		if (data.getName().equalsIgnoreCase(AttachmentData.ATTACHMENT_RESPONSE_NAME))
+			return HttpResponseData.builder().statusCode(data.getResponseCode()).build();
 
-		// Status code 200
-		if (title.startsWith("Status code"))
-			return HttpResponseData.builder().statusCode(details[2]).build();
+		else if (data.getName().equalsIgnoreCase(AttachmentData.ATTACHMENT_REQUEST_NAME))
+			return HttpRequestData.builder().httpMethod(data.getMethod()).endpoint(data.getUrl()).build();
 
-		// GET to https://ghchirp.tech/test/blog
-		return HttpRequestData.builder().httpMethod(details[0]).endpoint(details[2]).build();
+		throw new IllegalArgumentException("Attachment data name is invalid.");
 	}
 
 	protected int rowCount() {
@@ -56,7 +83,11 @@ public abstract class HttpData {
 	}
 
 	public boolean containsHttpContentFiles() {
-		if (bodyContentFile.isEmpty() && headersContentFile.isEmpty() && cookiesContentFile.isEmpty())
+		/*
+		 * if (bodyContentFile.isEmpty() && headersContentFile.isEmpty() &&
+		 * cookiesContentFile.isEmpty()) return false;
+		 */
+		if (bodyContentFile.isEmpty() && headersAndCookiesContentFile.isEmpty() && allParametersContentFile.isEmpty())
 			return false;
 		return true;
 	}
@@ -65,31 +96,22 @@ public abstract class HttpData {
 
 	public abstract void addHttpContentFilesDisplay(Map<String, String> details);
 
-	public void addHeadersContentFileLink(String type, Map<String, String> details) {
-		if (!getHeadersContentFile().isEmpty())
-			details.put(type + " Headers", getHeadersContentFile());
-	}
-
-	public void addCookiesContentFileLink(String type, Map<String, String> details) {
-		if (!getCookiesContentFile().isEmpty())
-			details.put(type + " Cookies", getCookiesContentFile());
-	}
-
-	public void addBodyContentFileLink(String type, Map<String, String> details) {
-		if (!getBodyContentFile().isEmpty())
-			details.put(type + " Body", getBodyContentFile());
-	}
-
 	protected String createFileLinks() {
 		StringBuffer sbr = new StringBuffer();
 
 		if (containsHttpContentFiles()) {
 			if (!bodyContentFile.isEmpty())
 				sbr.append(createFileLink(bodyContentFile, "Body"));
-			if (!headersContentFile.isEmpty())
-				sbr.append(createFileLink(headersContentFile, "Headers"));
-			if (!cookiesContentFile.isEmpty())
-				sbr.append(createFileLink(cookiesContentFile, "Cookies"));
+			/*
+			 * if (!headersContentFile.isEmpty())
+			 * sbr.append(createFileLink(headersContentFile, "Headers")); if
+			 * (!cookiesContentFile.isEmpty()) sbr.append(createFileLink(cookiesContentFile,
+			 * "Cookies"));
+			 */
+			if (!headersAndCookiesContentFile.isEmpty())
+				sbr.append(createFileLink(headersAndCookiesContentFile, "Headers & Cookies"));
+			if (!allParametersContentFile.isEmpty())
+				sbr.append(createFileLink(allParametersContentFile, "Parameters"));
 		}
 		return sbr.toString();
 	}
