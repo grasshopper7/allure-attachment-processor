@@ -1,15 +1,22 @@
 package tech.grasshopper.processor;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
 import lombok.Builder;
 import tech.grasshopper.pojo.Attachment;
+import tech.grasshopper.pojo.AttachmentData;
 import tech.grasshopper.pojo.HttpData;
 import tech.grasshopper.pojo.HttpLogData;
 import tech.grasshopper.pojo.HttpRequestData;
@@ -21,10 +28,9 @@ public class AttachmentProcessor {
 	private HttpLogData log;
 	private List<HttpLogData> httpLogData;
 	private String fileNamePrefix = "";
-	private HtmlParser htmlParser;
+	private AttachmentData data;
 
 	private String allureResultsDirectory;
-
 	private String reportDirectory;
 
 	@Builder
@@ -41,28 +47,28 @@ public class AttachmentProcessor {
 		for (Attachment attachment : attachments) {
 			Path path = Paths.get(allureResultsDirectory, attachment.getSource());
 
-			try {
-				htmlParser = HtmlParser.builder().filePath(path).build();
-				htmlParser.initialize();
-			} catch (IOException e) {
-				logger.info("Skipping attachment as unable to access file - " + path.toString());
-				continue;
-			}
-
-			String methodUrlOrStatusTxt = "";
-			try {
-				methodUrlOrStatusTxt = htmlParser.retrieveMethodUrlOrStatusText();
-			} catch (IllegalArgumentException e) {
-				logger.info(e.getMessage() + " Skipping attachment - " + path.toString());
-				continue;
-			}
-
-			httpData = HttpData.createHttpData(methodUrlOrStatusTxt);
-
-			if (attachment.getSource().indexOf(Attachment.FILENAME_SEPARATOR) == -1) {
+			if (!attachment.getSource().endsWith(Attachment.FILENAME_SUFFIX)) {
 				logger.info("Skipping attachment as file name not correct - " + path.toString());
 				continue;
 			}
+
+			try {
+				Gson gson = new Gson();
+				data = gson.fromJson(Files.newBufferedReader(path), AttachmentData.class);
+			} catch (JsonSyntaxException | JsonIOException | IOException e) {
+				logger.info(String.format(
+						"Skipping attachment at '%s', as unable to parse result to AttachmentData pojo.", path));
+				continue;
+			}
+
+			try {
+				httpData = HttpData.createHttpData(data);
+			} catch (IllegalArgumentException e) {
+				// Should never happen
+				logger.info(String.format("Skipping attachment at '%s', due to invalid name.", path));
+				continue;
+			}
+
 			fileNamePrefix = retrieveFileNamePrefix(attachment.getSource());
 
 			createOrUpdateHttpLogData();
@@ -79,14 +85,14 @@ public class AttachmentProcessor {
 			logger.info(e.getMessage() + " Skipping body for - " + path.toString());
 		}
 		try {
-			processHeaders();
+			processHeadersAndCookies();
 		} catch (IOException e) {
-			logger.info(e.getMessage() + " Skipping headers for - " + path.toString());
+			logger.info(e.getMessage() + " Skipping headers and cookies for - " + path.toString());
 		}
 		try {
-			processCookies();
+			processAllParameters();
 		} catch (IOException e) {
-			logger.info(e.getMessage() + " Skipping cookies for - " + path.toString());
+			logger.info(e.getMessage() + " Skipping parameters for - " + path.toString());
 		}
 	}
 
@@ -104,7 +110,7 @@ public class AttachmentProcessor {
 	}
 
 	private void processBodyContent() throws IOException {
-		String content = htmlParser.retrieveBodyContent();
+		String content = data.getBody();
 		if (content.length() > 0) {
 			AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).reportDirectory(reportDirectory).build()
 					.processBodyContent(content);
@@ -112,21 +118,33 @@ public class AttachmentProcessor {
 		}
 	}
 
-	private void processHeaders() throws IOException {
-		Map<String, String> headers = htmlParser.retrieveHeadersContent();
-		if (!headers.isEmpty()) {
-			AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).reportDirectory(reportDirectory).build()
-					.processHeadersContent(headers);
-			httpData.setHeadersContentFile(fileNamePrefix);
-		}
+	private void processHeadersAndCookies() throws IOException {
+		Map<String, String> headers = data.getHeaders();
+		Map<String, String> cookies = data.getCookies();
+
+		if (headers.isEmpty() && cookies.isEmpty())
+			return;
+
+		Map<String, Map<String, String>> headersAndCookies = new HashMap<>();
+		if (!headers.isEmpty())
+			headersAndCookies.put(Attachment.HEADERS, headers);
+		if (!cookies.isEmpty())
+			headersAndCookies.put(Attachment.COOKIES, cookies);
+
+		AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).reportDirectory(reportDirectory).build()
+				.processHeadersAndCookiesContent(headersAndCookies);
+		httpData.setHeadersAndCookiesContentFile(fileNamePrefix);
 	}
 
-	private void processCookies() throws IOException {
-		Map<String, String> cookies = htmlParser.retrieveCookiesContent();
-		if (!cookies.isEmpty()) {
-			AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).reportDirectory(reportDirectory).build()
-					.processCookiesContent(cookies);
-			httpData.setCookiesContentFile(fileNamePrefix);
-		}
+	private void processAllParameters() throws IOException {
+		Map<String, Map<String, String>> parameters = data.getAllParameters();
+		List<Map<String, String>> parts = data.getMultiParts();
+
+		if (parameters.isEmpty() && parts.isEmpty())
+			return;
+
+		AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).reportDirectory(reportDirectory).build()
+				.processAllParametersContent(parameters, parts);
+		httpData.setAllParametersContentFile(fileNamePrefix);
 	}
 }

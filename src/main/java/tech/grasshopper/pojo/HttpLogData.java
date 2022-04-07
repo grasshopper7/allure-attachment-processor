@@ -1,8 +1,10 @@
 package tech.grasshopper.pojo;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.Builder.Default;
+import lombok.Data;
+import tech.grasshopper.pojo.HttpNoData.HttpNoRequestData;
+import tech.grasshopper.pojo.HttpNoData.HttpNoResponseData;
 
 @Data
 @Builder

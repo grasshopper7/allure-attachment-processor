@@ -1,12 +1,16 @@
 package tech.grasshopper.processor;
 
+import static tech.grasshopper.display.HtmlSnippets.addHtmlBodyTag;
+import static tech.grasshopper.display.HtmlSnippets.bodyContent;
+import static tech.grasshopper.display.HtmlSnippets.headersCookiesParametersContent;
+import static tech.grasshopper.display.HtmlSnippets.multiPartsContent;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.text.StringEscapeUtils;
 
 import lombok.Builder;
 import tech.grasshopper.pojo.Attachment;
@@ -19,38 +23,33 @@ public class AttachmentContentProcessor {
 	private String reportDirectory;
 
 	public void processBodyContent(String content) throws IOException {
-		StringBuffer sbr = new StringBuffer();
-		sbr.append("<div><pre>").append(StringEscapeUtils.escapeHtml4(content)).append("</pre></div>");
-		createDisplayFiles(sbr, Attachment.BODY);
+		createDisplayFiles(bodyContent(content), Attachment.BODY);
 	}
 
-	public void processHeadersContent(Map<String, String> data) throws IOException {
-		StringBuffer sbr = processHeadersAndCookiesContent(data);
-		createDisplayFiles(sbr, Attachment.HEADERS);
-	}
-
-	public void processCookiesContent(Map<String, String> data) throws IOException {
-		StringBuffer sbr = processHeadersAndCookiesContent(data);
-		createDisplayFiles(sbr, Attachment.COOKIES);
-	}
-
-	private StringBuffer processHeadersAndCookiesContent(Map<String, String> data) {
+	public void processHeadersAndCookiesContent(Map<String, Map<String, String>> data) throws IOException {
 		StringBuffer sbr = new StringBuffer();
 
-		sbr.append("<table style=\"border: 1px solid black;\">");
-		data.forEach((k, v) -> {
-			sbr.append("<tr style=\"border: 1px solid black;\">").append("<td style=\"border: 1px solid black;\">")
-					.append(StringEscapeUtils.escapeHtml4(k)).append("</td>")
-					.append("<td style=\"border: 1px solid black;\">").append(StringEscapeUtils.escapeHtml4(v))
-					.append("</td>").append("</tr>");
-		});
-		sbr.append("</table>");
-		return sbr;
+		data.forEach((k, v) -> sbr.append(headersCookiesParametersContent(v, k)));
+		createDisplayFiles(sbr, Attachment.HEADERSANDCOOKIES);
+	}
+
+	public void processAllParametersContent(Map<String, Map<String, String>> parameters,
+			List<Map<String, String>> parts) throws IOException {
+		StringBuffer sbr = new StringBuffer();
+
+		parameters.forEach((k, v) -> sbr.append(headersCookiesParametersContent(v, k)));
+
+		if (!parts.isEmpty())
+			sbr.append(multiPartsContent(parts));
+
+		if (sbr.length() == 0)
+			return;
+		createDisplayFiles(sbr, Attachment.ALLPARAMETERS);
 	}
 
 	private void createDisplayFiles(StringBuffer content, String fileNameSuffix) throws IOException {
 		StringBuffer sbr = new StringBuffer();
-		sbr.append("<html><body>").append(content).append("</body></html>");
+		sbr.append(addHtmlBodyTag(content));
 
 		StringBuffer sbrFile = new StringBuffer().append(fileNamePrefix).append(Attachment.FILENAME_SEPARATOR)
 				.append(fileNameSuffix).append(".html");
@@ -58,9 +57,10 @@ public class AttachmentContentProcessor {
 		Path path = Paths.get(reportDirectory, Attachment.REPORT_DATA_DIRECTORY, sbrFile.toString());
 
 		try (FileOutputStream outputStream = new FileOutputStream(path.toString())) {
-			outputStream.write(content.toString().getBytes());
+			outputStream.write(sbr.toString().getBytes());
 		} catch (IOException e) {
-			throw new IOException("Unable to process " + fileNameSuffix + " content for display.");
+			throw new IOException(String.format("Unable to process %s%s%s content for display.", fileNamePrefix,
+					Attachment.FILENAME_SEPARATOR, fileNameSuffix));
 		}
 	}
 }
