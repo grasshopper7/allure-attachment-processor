@@ -32,6 +32,6 @@ public class HttpRequestData extends HttpData {
 
 	@Override
 	public void addHttpContentFilesDisplay(Map<String, String> details) {
-		details.put("Request", createFileLinks());
+		createFileLinks("Request", details);
 	}
 }

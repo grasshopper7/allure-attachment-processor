@@ -65,17 +65,23 @@ public abstract class HttpData {
 
 	public abstract void addHttpContentFilesDisplay(Map<String, String> details);
 
-	protected String createFileLinks() {
+	protected void createFileLinks(String type, Map<String, String> details) {
 		StringBuffer sbr = new StringBuffer();
 
 		if (containsHttpContentFiles()) {
-			if (!bodyContentFile.isEmpty())
+			if (!bodyContentFile.isEmpty()) {
 				sbr.append(dataFileLink(bodyContentFile, "Body"));
-			if (!headersAndCookiesContentFile.isEmpty())
+				details.put(type + " Body", bodyContentFile);
+			}
+			if (!headersAndCookiesContentFile.isEmpty()) {
 				sbr.append(dataFileLink(headersAndCookiesContentFile, "Headers & Cookies"));
-			if (!allParametersContentFile.isEmpty())
+				details.put(type + " Headers & Cookies", headersAndCookiesContentFile);
+			}
+			if (!allParametersContentFile.isEmpty()) {
 				sbr.append(dataFileLink(allParametersContentFile, "Parameters"));
+				details.put(type + " Parameters", allParametersContentFile);
+			}
 		}
-		return sbr.toString();
+		details.put(type, sbr.toString());
 	}
 }

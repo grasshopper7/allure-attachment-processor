@@ -27,6 +27,6 @@ public class HttpResponseData extends HttpData {
 
 	@Override
 	public void addHttpContentFilesDisplay(Map<String, String> details) {
-		details.put("Response", createFileLinks());
+		createFileLinks("Response",details);
 	}
 }
