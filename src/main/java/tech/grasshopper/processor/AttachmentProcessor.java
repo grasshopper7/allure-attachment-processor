@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
@@ -32,11 +33,16 @@ public class AttachmentProcessor {
 
 	private String allureResultsDirectory;
 	private String reportDirectory;
+	private Set<String> requestHeadersBlacklist;
+	private Set<String> responseHeadersBlacklist;
 
 	@Builder
-	public AttachmentProcessor(String allureResultsDirectory, String reportDirectory) {
+	public AttachmentProcessor(String allureResultsDirectory, String reportDirectory,
+			Set<String> requestHeadersBlacklist, Set<String> responseHeadersBlacklist) {
 		this.allureResultsDirectory = allureResultsDirectory;
 		this.reportDirectory = reportDirectory;
+		this.requestHeadersBlacklist = requestHeadersBlacklist;
+		this.responseHeadersBlacklist = responseHeadersBlacklist;
 	}
 
 	private final static Logger logger = Logger.getLogger(AttachmentProcessor.class.getName());
@@ -119,11 +125,11 @@ public class AttachmentProcessor {
 	}
 
 	private void processHeadersAndCookies() throws IOException {
-		Map<String, String> headers = data.getHeaders();
-		Map<String, String> cookies = data.getCookies();
-
-		if (headers.isEmpty() && cookies.isEmpty())
+		if (data.getHeaders().isEmpty() && data.getCookies().isEmpty())
 			return;
+
+		Map<String, String> headers = processHeaders();
+		Map<String, String> cookies = data.getCookies();
 
 		Map<String, Map<String, String>> headersAndCookies = new HashMap<>();
 		if (!headers.isEmpty())
@@ -134,6 +140,26 @@ public class AttachmentProcessor {
 		AttachmentContentProcessor.builder().fileNamePrefix(fileNamePrefix).reportDirectory(reportDirectory).build()
 				.processHeadersAndCookiesContent(headersAndCookies);
 		httpData.setHeadersAndCookiesContentFile(fileNamePrefix);
+	}
+
+	private Map<String, String> processHeaders() {
+		Map<String, String> headers = new HashMap<>();
+		data.getHeaders().forEach((k, v) -> headers.put(k, v));
+
+		if (httpData instanceof HttpRequestData && !requestHeadersBlacklist.isEmpty())
+			blackListHeaders(requestHeadersBlacklist, headers);
+
+		if (httpData instanceof HttpResponseData && !responseHeadersBlacklist.isEmpty())
+			blackListHeaders(responseHeadersBlacklist, headers);
+
+		return headers;
+	}
+
+	private void blackListHeaders(Set<String> headerReqResBlacklist, Map<String, String> headers) {
+		headerReqResBlacklist.forEach(h -> {
+			if (headers.containsKey(h))
+				headers.replace(h, "[BLACKLIST]");
+		});
 	}
 
 	private void processAllParameters() throws IOException {
